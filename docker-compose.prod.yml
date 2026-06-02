@@ -13,3 +13,4 @@ services:
       - FLASK_ENV=production
       - PORT=5000
       - DATABASE_URL=${DATABASE_URL}
+    command: python main.py

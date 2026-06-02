@@ -30,10 +30,9 @@ AsyncSessionLocal = async_sessionmaker(
 
 @asynccontextmanager
 async def get_db():
-    """Asynchronous context manager yielding a scoped AsyncSession connection.
-
+    """
+    Asynchronous context manager yielding a scoped AsyncSession connection.
     Automatically opens a connection and guarantees it is safely closed
-    when the transaction block finishes (preventing connection leaks).
     """
     async with AsyncSessionLocal() as session:
         try:

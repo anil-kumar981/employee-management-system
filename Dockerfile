@@ -27,6 +27,4 @@ COPY . .
 # Expose Flask / Uvicorn server port
 EXPOSE 5000
 
-# Migrations run automatically at startup via config.py (alembic upgrade head)
-# so no separate entrypoint script is needed here.
-CMD ["python", "asgi.py"]
+CMD ["python", "main.py"]
