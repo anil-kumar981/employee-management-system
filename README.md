@@ -196,7 +196,7 @@ All API endpoints return standard, clean JSON payloads.
 ---
 
 ## 🧪 Running Unit Tests
-We provide a comprehensive layered testing suite using mock objects for database interfaces:
+We provide a comprehensive layered testing suite using mock objects for database interfaces. To ensure the root directory is on the python path, execute via `python -m`:
 ```bash
-pytest app/test/ -v
+python -m pytest app/test/ -v
 ```
