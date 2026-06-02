@@ -6,8 +6,14 @@ from sqlalchemy import pool
 from alembic import context
 
 from app.core.config import Config
-from app.core.database import db
-from app.model.employee import Employee  # Ensure model is registered
+from app.database.database import Base
+
+# Import all models here so Base.metadata is fully populated for autogenerate.
+# Any new model file must be added to this list, otherwise autogenerate will
+# not detect it and will produce an empty migration.
+from app.model.employee import Employee
+
+__all__ = ["Employee"]
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -18,12 +24,15 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set DB URL dynamically from config
-config.set_main_option("sqlalchemy.url", Config.DATABASE_URL)
+# Set DB URL dynamically from config, stripping +asyncpg so Alembic connects synchronously using psycopg2
+# We replace '%' with '%%' to escape it, preventing configparser from throwing an invalid interpolation syntax ValueError
+sync_url = Config.DATABASE_URL.replace("+asyncpg", "").replace("%", "%%")
+config.set_main_option("sqlalchemy.url", sync_url)
+
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-target_metadata = db.metadata
+target_metadata = Base.metadata
 
 
 # other values from the config, defined by the needs of env.py,
@@ -70,9 +79,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

@@ -1,0 +1,29 @@
+# Git and metadata
+.git
+.gitignore
+.gitattributes
+
+# Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+
+# Docker configurations
+docker-compose*.yml
+.dockerignore
+Dockerfile
+
+# Environment files
+.env
+.env.*
+
+# Local SQLite databases (if any)
+*.db
+*.sqlite

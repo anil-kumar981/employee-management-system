@@ -1,4 +1,4 @@
-from app.main import create_app
+from app import create_app
 from app.core.config import Config
 
 # Build Flask application instance

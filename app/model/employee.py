@@ -1,15 +1,19 @@
 from datetime import date
 from sqlalchemy import Integer, String, Date
 from sqlalchemy.orm import Mapped, mapped_column
-from app.core.database import db
+from app.database.database import Base
 
-class Employee(db.Model):
+
+class Employee(Base):
     """Database model representing an Employee record in the 'employees' table."""
+
     __tablename__ = "employees"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False, index=True)
+    email: Mapped[str] = mapped_column(
+        String(120), unique=True, nullable=False, index=True
+    )
     department: Mapped[str] = mapped_column(String(100), nullable=False)
     date_joined: Mapped[date] = mapped_column(Date, nullable=False)
 
@@ -20,7 +24,9 @@ class Employee(db.Model):
             "name": self.name,
             "email": self.email,
             "department": self.department,
-            "date_joined": self.date_joined.isoformat() if isinstance(self.date_joined, date) else self.date_joined
+            "date_joined": self.date_joined.isoformat()
+            if isinstance(self.date_joined, date)
+            else self.date_joined,
         }
 
     def __repr__(self) -> str:
