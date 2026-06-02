@@ -8,6 +8,13 @@ from alembic import context
 from app.core.config import Config
 from app.database.database import Base
 
+# Import all models here so Base.metadata is fully populated for autogenerate.
+# Any new model file must be added to this list, otherwise autogenerate will
+# not detect it and will produce an empty migration.
+from app.model.employee import Employee
+
+__all__ = ["Employee"]
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
