@@ -2,30 +2,28 @@
 
 A production-grade, highly structured **Employee Management System** built with **Python 3**, **Flask**, and **SQLAlchemy 2.0 ORM** following a strict **Layered Architecture** design. 
 
-This project incorporates the solid, decoupled concepts of **Dependency Injection (DI)**, **Dependency Inversion (SOLID)**, **Asynchronous Thread Execution (`asyncio.to_thread`)**, **Dual-Schema Validation (Pydantic + Marshmallow)**, and **Centralized Global Exception Mapping**.
+This project incorporates the solid, decoupled concepts of **Dependency Injection (DI)**, **Dependency Inversion (SOLID)**, **100% Native Asynchronous Database Queries (`asyncpg` + `AsyncSession`)**, **Pydantic v2 Request Validation**, and **Centralized Global Exception Mapping**.
 
 ---
 
 ## 🌟 Architectural Features
 
 ### 1. Decoupled Layered Architecture (SOLID)
-- **Controller Layer (Router)**: Handled by `flask-smorest` class-based view routers. Only responsible for receiving HTTP requests, binding Swagger parameters, and returning standard JSON payloads. It has zero awareness of database schemas or database drivers.
-- **Service Layer (Business Logic)**: Houses business rules (uniqueness validations, partial update merging, resource presence checks) and orchestrates payloads. Runs deep structural assertions via **Pydantic v2**.
-- **Repository Layer (Data Access)**: Concrete database transactions utilizing **SQLAlchemy 2.0 ORM** mapping. Decoupled using an abstract base class (`abc.ABC`).
-- **Dependency Injection Container**: Dynamic instantiation inside `app/dependencies/container.py` injected into services and controllers, ensuring components are completely loose and testable.
+- **Controller Layer (Router)**: Handled by standard Flask blueprints and view routers. Only responsible for receiving HTTP requests, validating request bodies against Pydantic models, and returning standard JSON payloads.
+- **Service Layer (Business Logic)**: Houses business rules (uniqueness validations, partial update merging, resource presence checks) and orchestrates payloads, depending on abstract interfaces: [iemployee_service.py](file:///e:/employee-management-system/app/services/interface/iemployee_service.py).
+- **Repository Layer (Data Access)**: Concrete database transactions utilizing **SQLAlchemy 2.0 ORM** mapping. Decoupled using an abstract base class hierarchy: [ibase_repository.py](file:///e:/employee-management-system/app/repositories/interface/ibase_repository.py) and [iemployee_repository.py](file:///e:/employee-management-system/app/repositories/interface/iemployee_repository.py).
+- **Dependency Injection Container**: Dynamic instantiation inside [employee_dependencies.py](file:///e:/employee-management-system/app/dependencies/employee_dependencies.py) injected into services and repositories.
 
-### 2. High-Performance Non-Blocking Database Queries
-- Although utilizing the synchronous `psycopg2` / `sqlite3` drivers, the **Repository Layer** methods are defined as `async def`.
-- Inside the repository, blocking database queries (commits, loads) are dispatched to separate background threadpools via **`asyncio.to_thread`**. This prevents blocking the main Flask event loop, drastically improving server throughput.
+### 2. 100% Native Asynchronous Non-Blocking Database Queries (Fast!)
+- All database queries are **100% natively asynchronous** utilizing **`asyncpg`** (the fastest asynchronous PostgreSQL driver for Python) and SQLAlchemy's **`AsyncSession`**.
+- Database queries run directly over non-blocking TCP sockets, exactly like **Node.js/NestJS**, completely eliminating the need for blocking synchronous drivers and background worker threads!
 
-### 3. Dual-Schema Validation Pattern
-- **Pydantic v2 Schemas** (`app/schema/employee.py`): Performs core structural logic validation (RFC-compliant email, whitespace trimming, date formatting) in the **Service Layer** to preserve database integrity.
-- **Marshmallow Schemas** (`app/schema/marshmallow_schemas.py`): Registered with `flask-smorest` views to **auto-generate interactive OpenAPI Swagger UI specs**.
+### 3. FastAPI-Style Pydantic Validator Decorator
+- Incoming JSON payloads are validated at the route boundary using the custom `@validate_request(Schema)` decorator. 
+- Fully-validated Pydantic models are injected directly as arguments (`body`) into the route function signatures.
 
-### 4. Standardized Dynamic Response Factory & Centralized Handlers
-- Centralized `ApiResponseFactory` formats every successful response and error into a uniform JSON structure.
-- Messages are fully dynamic (e.g., `"Employee 'John Doe' was successfully created with ID 5"` instead of `"Success"`).
-- Global exception handlers catch semantic custom errors (`ValidationError`, `EntityNotFoundException`, `ConflictException`) and map them to standard HTTP status codes.
+### 4. Dynamic OpenAPI Swagger UI specs
+- Dynamically generates the OpenAPI 3.0.3 specification by extracting JSON schemas directly from your Pydantic schemas using `.model_json_schema()`, serving an interactive Swagger interface at `/swagger-ui`.
 
 ---
 
@@ -38,27 +36,34 @@ employee-management-system/
 │   │   └── employee_controller.py
 │   ├── core/                    # System cores (app factory, DB binds, exceptions)
 │   │   ├── config.py
-│   │   ├── database.py
-│   │   └── error_handlers.py
+│   │   ├── database.py          # Native Async Engine & SessionMaker
+│   │   ├── error_handlers.py
+│   │   └── swagger.py           # Dynamic OpenAPI Specification Generator
+│   ├── decorators/              # Custom decorators (FastAPI-style validator)
+│   │   └── decorator.py
 │   ├── dependencies/            # Dependency Injection Registry (DI Container)
-│   │   └── container.py
+│   │   └── employee_dependencies.py
 │   ├── model/                   # SQLAlchemy Database Models
 │   │   └── employee.py
 │   ├── repositories/            # Data Access Layer (Abstract & Concrete)
-│   │   ├── base_repository.py
+│   │   ├── interface/
+│   │   │   ├── ibase_repository.py
+│   │   │   └── iemployee_repository.py
+│   │   ├── base_repository.py   # Generic Concrete BaseRepo[T]
 │   │   └── employee_repository.py
-│   ├── schema/                  # Validation Schemas (Pydantic & Marshmallow)
-│   │   ├── employee.py
-│   │   └── marshmallow_schemas.py
+│   ├── schema/                  # Validation Schemas (Pydantic Models)
+│   │   └── employee.py
 │   ├── services/                # Business Logic Layer (Abstract & Concrete)
-│   │   ├── base_service.py
+│   │   ├── interface/
+│   │   │   └── iemployee_service.py
 │   │   └── employee_service.py
 │   ├── shared/                  # Common responses and exceptions
-│   │   ├── exceptions.py
-│   │   └── response_factory.py
+│   │   ├── api_response/
+│   │   │   └── response_factory.py
+│   │   └── exceptions.py
 │   └── test/                    # Full-layered Pytest Suite
 │       ├── test_controller.py
-│       ├── test_repository.py
+│       ├── test_repository.py   # Mocks AsyncSession context managers
 │       └── test_service.py
 ├── migrations/                  # Alembic DB Migration history
 ├── .env                         # Server environment parameters
@@ -73,27 +78,29 @@ employee-management-system/
 
 ### 1. Prerequisites
 - **Python 3.10+** (System is tested on Python 3.14)
-- **Virtual Environment**
+- **PostgreSQL 18** database running locally.
+- **pgAdmin** or standard shell.
 
 ### 2. Environment Configuration
-The system uses `.env` in the root directory. Rename/configure it with your parameters:
+The system uses `.env` in the root directory. Configure it with your PostgreSQL parameters:
 ```env
 # Server configuration
 FLASK_ENV=development
 PORT=5000
 
 # Database Configuration
-# Fallback SQLite for instant zero-config startup:
-DATABASE_URL=sqlite:///employee_management.db
-
-# To use local PostgreSQL local instance:
-# DATABASE_URL=postgresql://<username>:<password>@localhost:5432/<database_name>
+# Local PostgreSQL 18 connection with native asyncpg driver
+DATABASE_URL=postgresql+asyncpg://postgres:@Admin123@localhost:5432/Employee_management_System
 ```
 
-### 3. Setup Virtual Environment & Run Setup
+### 3. Database Schema Setup
+Ensure your local PostgreSQL server is running and create a database named `Employee_management_System`.
+
+### 4. Setup Virtual Environment & Run Setup
 ```powershell
 # 1. Activate your virtual environment
-.\venv\Scripts\activate
+source venv/Scripts/activate # Git Bash
+# or .\venv\Scripts\activate # PowerShell
 
 # 2. Run the main server (DB schemas will auto-initialize instantly!)
 python main.py
@@ -113,57 +120,4 @@ We provide a 100% mocked layered testing suite verifying the Controller, Service
 ```powershell
 # Run the complete test suite:
 pytest app/test/ -v
-```
-
----
-
-## 🔌 API Reference Specifications
-
-All endpoints return a uniform wrapped JSON structure:
-```json
-{
-  "success": true,
-  "message": "Dynamic descriptive operation outcome message.",
-  "data": { ... }
-}
-```
-
-| Method | Endpoint | Description | Expected Request Body | Status Code |
-| :--- | :--- | :--- | :--- | :--- |
-| **POST** | `/employees/` | Add a new employee. | See Create Schema | `201 Created` |
-| **GET** | `/employees/` | Retrieve a list of all employees. | None | `200 OK` |
-| **GET** | `/employees/{id}` | Retrieve details of a specific employee. | None | `200 OK` |
-| **PUT** | `/employees/{id}` | Update an existing employee's details. | See Update Schema | `200 OK` |
-| **DELETE** | `/employees/{id}` | Remove an employee from the system. | None | `200 OK` |
-
-### Expected Schema Formats
-
-#### 1. Employee Create Schema (POST)
-```json
-{
-  "name": "Alice Smith",
-  "email": "alice.smith@example.com",
-  "department": "Engineering",
-  "date_joined": "2026-06-02"
-}
-```
-
-#### 2. Employee Update Schema (PUT)
-*All fields are optional for partial updates:*
-```json
-{
-  "name": "Alice Jenkins",
-  "department": "Infrastructure"
-}
-```
-
-#### 3. Error Response Format (e.g., 400 Bad Request)
-```json
-{
-  "success": false,
-  "message": "Validation failed: Email must be a valid email address.",
-  "errors": {
-    "email": "value is not a valid email address"
-  }
-}
 ```

@@ -1,46 +1,35 @@
 from typing import List, Dict, Any
-from pydantic import ValidationError as PydanticValidationError
 from app.model.employee import Employee
-from app.repositories.base_repository import BaseEmployeeRepository
-from app.services.base_service import BaseEmployeeService
-from app.shared.exceptions import ValidationError, ConflictException, EntityNotFoundException
+from app.services.interface.iemployee_service import IEmployeeService
+from app.shared.exceptions import ConflictException, EntityNotFoundException
 from app.schema.employee import EmployeeCreateSchema, EmployeeUpdateSchema
+from app.repositories.interface.iemployee_repository import IEmployeeRepo
+from app.repositories.employee_repository import EmployeeRepository
 
-class EmployeeServiceImpl(BaseEmployeeService):
+class EmployeeServiceImpl(IEmployeeService):
     """Concrete service containing core business logic for managing Employees.
     
-    Adheres to dependency injection by accepting an abstract BaseEmployeeRepository instance.
+    Adheres to dependency injection by accepting an abstract IEmployeeRepo repository instance.
     """
     
-    def __init__(self, employee_repository: BaseEmployeeRepository) -> None:
-        self.repo = employee_repository
+    def __init__(self, repo: IEmployeeRepo = None) -> None:
+        self.repo = repo or EmployeeRepository()
         
-    async def create_employee(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Perform validation and add a new employee."""
-        # 1. Run rigorous schema and type validations via Pydantic
-        try:
-            validated_data = EmployeeCreateSchema(**data)
-        except PydanticValidationError as e:
-            # Flatten Pydantic errors into key-value descriptions and raise custom ValidationError
-            error_details = {str(err["loc"][0]): err["msg"] for err in e.errors()}
-            raise ValidationError(
-                message=f"Validation failed: {', '.join(error_details.values())}",
-                payload=error_details
-            )
-            
-        # 2. Assert unique email constraint in the business layer
-        existing = await self.repo.get_by_email(validated_data.email)
+    async def create_employee(self, employee_in: EmployeeCreateSchema) -> Dict[str, Any]:
+        """Perform unique validation checks and add a new employee."""
+        # 1. Assert unique email constraint in the business layer
+        existing = await self.repo.get_by_email(employee_in.email)
         if existing:
             raise ConflictException(
-                message=f"An employee with email '{validated_data.email}' already exists in the system."
+                message=f"An employee with email '{employee_in.email}' already exists in the system."
             )
             
-        # 3. Instantiate domain model and commit via repository
+        # 2. Instantiate domain model and save via repository
         employee = Employee(
-            name=validated_data.name,
-            email=validated_data.email,
-            department=validated_data.department,
-            date_joined=validated_data.date_joined
+            name=employee_in.name,
+            email=employee_in.email,
+            department=employee_in.department,
+            date_joined=employee_in.date_joined
         )
         saved_employee = await self.repo.add(employee)
         return saved_employee.to_dict()
@@ -59,7 +48,7 @@ class EmployeeServiceImpl(BaseEmployeeService):
         employees = await self.repo.get_all()
         return [emp.to_dict() for emp in employees]
         
-    async def update_employee(self, employee_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def update_employee(self, employee_id: int, employee_in: EmployeeUpdateSchema) -> Dict[str, Any]:
         """Validate and modify an existing employee's details."""
         # 1. Verify existence of the employee
         employee = await self.repo.get_by_id(employee_id)
@@ -68,34 +57,24 @@ class EmployeeServiceImpl(BaseEmployeeService):
                 message=f"Cannot update employee. Employee with ID {employee_id} does not exist."
             )
             
-        # 2. Run validations for fields provided (allowing partial updates)
-        try:
-            validated_data = EmployeeUpdateSchema(**data)
-        except PydanticValidationError as e:
-            error_details = {str(err["loc"][0]): err["msg"] for err in e.errors()}
-            raise ValidationError(
-                message=f"Update validation failed: {', '.join(error_details.values())}",
-                payload=error_details
-            )
+        # Extract fields explicitly provided in the request payload
+        update_data = employee_in.model_dump(exclude_unset=True)
             
-        # 3. Check for unique email conflicts if it is being changed
-        if validated_data.email is not None and validated_data.email != employee.email:
-            existing = await self.repo.get_by_email(validated_data.email)
-            if existing:
-                raise ConflictException(
-                    message=f"Cannot update email. An employee with email '{validated_data.email}' already exists."
-                )
-            employee.email = validated_data.email
+        # 2. Check for unique email conflicts if it is being changed
+        if "email" in update_data:
+            new_email = update_data["email"]
+            if new_email != employee.email:
+                existing = await self.repo.get_by_email(new_email)
+                if existing:
+                    raise ConflictException(
+                        message=f"Cannot update email. An employee with email '{new_email}' already exists."
+                    )
             
-        # 4. Modify fields
-        if validated_data.name is not None:
-            employee.name = validated_data.name
-        if validated_data.department is not None:
-            employee.department = validated_data.department
-        if validated_data.date_joined is not None:
-            employee.date_joined = validated_data.date_joined
+        # 3. Modify fields dynamically
+        for key, value in update_data.items():
+            setattr(employee, key, value)
             
-        # 5. Commit modifications via repository
+        # 4. Commit modifications via repository
         updated_employee = await self.repo.update(employee)
         return updated_employee.to_dict()
         

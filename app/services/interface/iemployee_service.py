@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
+from app.schema.employee import EmployeeCreateSchema, EmployeeUpdateSchema
 
-class BaseEmployeeService(ABC):
-    """Abstract interface defining business logic contract operations for managing Employees."""
+class IEmployeeService(ABC):
+    """Interface declaring business logic contract operations for managing Employees."""
     
     @abstractmethod
-    async def create_employee(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_employee(self, employee_in: EmployeeCreateSchema) -> Dict[str, Any]:
         """Perform validation and add a new employee."""
         pass
         
@@ -20,7 +21,7 @@ class BaseEmployeeService(ABC):
         pass
         
     @abstractmethod
-    async def update_employee(self, employee_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def update_employee(self, employee_id: int, employee_in: EmployeeUpdateSchema) -> Dict[str, Any]:
         """Validate and modify an existing employee's details."""
         pass
         
