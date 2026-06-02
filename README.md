@@ -1,29 +1,26 @@
-# Employee Management System
+# 🚀 Employee Management System
 
 A production-grade, highly structured **Employee Management System** built with **Python 3**, **Flask**, and **SQLAlchemy 2.0 ORM** following a strict **Layered Architecture** design. 
 
-This project incorporates the solid, decoupled concepts of **Dependency Injection (DI)**, **Dependency Inversion (SOLID)**, **100% Native Asynchronous Database Queries (`asyncpg` + `AsyncSession`)**, **Pydantic v2 Request Validation**, and **Centralized Global Exception Mapping**.
+This project incorporates clean coding practices, **Dependency Injection (DI)**, **100% Native Asynchronous Database Queries (`asyncpg` + `AsyncSession`)**, **Pydantic v2 Request Validation**, and **Centralized Global Exception Mapping**.
 
 ---
 
 ## 🌟 Architectural Features
 
 ### 1. Decoupled Layered Architecture (SOLID)
-- **Controller Layer (Router)**: Handled by standard Flask blueprints and view routers. Only responsible for receiving HTTP requests, validating request bodies against Pydantic models, and returning standard JSON payloads.
-- **Service Layer (Business Logic)**: Houses business rules (uniqueness validations, partial update merging, resource presence checks) and orchestrates payloads, depending on abstract interfaces: [iemployee_service.py](file:///e:/employee-management-system/app/services/interface/iemployee_service.py).
-- **Repository Layer (Data Access)**: Concrete database transactions utilizing **SQLAlchemy 2.0 ORM** mapping. Decoupled using an abstract base class hierarchy: [ibase_repository.py](file:///e:/employee-management-system/app/repositories/interface/ibase_repository.py) and [iemployee_repository.py](file:///e:/employee-management-system/app/repositories/interface/iemployee_repository.py).
-- **Dependency Injection Container**: Dynamic instantiation inside [employee_dependencies.py](file:///e:/employee-management-system/app/dependencies/employee_dependencies.py) injected into services and repositories.
+* **Controller Layer (Router)**: Handled by standard Flask blueprints and view routers. It is only responsible for receiving HTTP requests, validating request bodies, and returning standard JSON payloads.
+* **Service Layer (Business Logic)**: Houses business rules (uniqueness validations, partial update merging, presence checks) and validation logic, fully decoupled using abstract interfaces.
+* **Repository Layer (Data Access)**: Concrete database transactions utilizing **SQLAlchemy 2.0 ORM**. Handles CRUD operations natively and is isolated from the service layer via interfaces.
+* **Dependency Injection Container**: Dynamic instantiation inside dependency providers, injecting repositories directly into services.
 
-### 2. 100% Native Asynchronous Non-Blocking Database Queries (Fast!)
-- All database queries are **100% natively asynchronous** utilizing **`asyncpg`** (the fastest asynchronous PostgreSQL driver for Python) and SQLAlchemy's **`AsyncSession`**.
-- Database queries run directly over non-blocking TCP sockets, exactly like **Node.js/NestJS**, completely eliminating the need for blocking synchronous drivers and background worker threads!
+### 2. 100% Native Asynchronous Non-Blocking Database Queries
+* All database queries are natively asynchronous utilizing **`asyncpg`** (the fastest async PostgreSQL driver for Python) and SQLAlchemy's **`AsyncSession`**.
+* Eliminates thread-blocking constraints, unlocking high-concurrency scaling.
 
-### 3. FastAPI-Style Pydantic Validator Decorator
-- Incoming JSON payloads are validated at the route boundary using the custom `@validate_request(Schema)` decorator. 
-- Fully-validated Pydantic models are injected directly as arguments (`body`) into the route function signatures.
-
-### 4. Dynamic OpenAPI Swagger UI specs
-- Dynamically generates the OpenAPI 3.0.3 specification by extracting JSON schemas directly from your Pydantic schemas using `.model_json_schema()`, serving an interactive Swagger interface at `/swagger-ui`.
+### 3. FastAPI-Style Validation & Global Error Handling
+* Incoming JSON payloads are validated at the route boundary using a custom `@validate_request` decorator and Pydantic schemas.
+* Global exceptions are caught by centralized middleware, mapping database conflicts, entity absences, or validation failures into clean API responses.
 
 ---
 
@@ -36,10 +33,8 @@ employee-management-system/
 │   │   └── employee_controller.py
 │   ├── core/                    # System cores (app factory, DB binds, exceptions)
 │   │   ├── config.py
-│   │   ├── database.py          # Native Async Engine & SessionMaker
-│   │   ├── error_handlers.py
-│   │   └── swagger.py           # Dynamic OpenAPI Specification Generator
-│   ├── decorators/              # Custom decorators (FastAPI-style validator)
+│   │   └── database.py          # Native Async Engine & SessionMaker
+│   ├── decorators/              # Custom decorators (FastAPI-style validation decorator)
 │   │   └── decorator.py
 │   ├── dependencies/            # Dependency Injection Registry (DI Container)
 │   │   └── employee_dependencies.py
@@ -63,88 +58,135 @@ employee-management-system/
 │   │   └── exceptions.py
 │   └── test/                    # Full-layered Pytest Suite
 │       ├── test_controller.py
-│       ├── test_repository.py   # Mocks AsyncSession context managers
+│       ├── test_repository.py
 │       └── test_service.py
 ├── migrations/                  # Alembic DB Migration history
 ├── .env                         # Server environment parameters
 ├── alembic.ini                  # Alembic setup configuration
-├── main.py                      # Server runner entrypoint
+├── main.py                      # WSGI Entrypoint (standard server)
+├── asgi.py                      # ASGI Entrypoint (wrapped event-loop server)
+├── Dockerfile                   # Production Docker configuration
 └── requirements.txt             # Installed dependencies list
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started (Local Setup)
 
-### 1. Prerequisites
-- **Python 3.10+** (System is tested on Python 3.14)
-- **PostgreSQL 18** database running locally.
-- **pgAdmin** or standard shell.
-
-### 2. Environment Configuration
-The system uses `.env` in the root directory. Configure it with your PostgreSQL parameters:
-```env
-# Server configuration
-FLASK_ENV=development
-PORT=5000
-
-# Database Configuration
-# Local PostgreSQL 18 connection with native asyncpg driver
-DATABASE_URL=postgresql+asyncpg://postgres:@Admin123@localhost:5432/Employee_management_System
-```
-
-### 3. Database Schema Setup
-Ensure your local PostgreSQL server is running and create a database named `Employee_management_System`.
-
-### 4. Setup Virtual Environment & Run Setup
-```powershell
-# 1. Activate your virtual environment
-source venv/Scripts/activate # Git Bash
-# or .\venv\Scripts\activate # PowerShell
-
-# 2. Run the main server (DB schemas will auto-initialize instantly!)
-python main.py
-```
-
----
-
-## 📑 Interactive API Documentation (Swagger)
-
-Once the server is running, visit **`http://localhost:5000/swagger-ui`** to access the premium interactive API documentation interface. You can test endpoints directly inside your browser!
-
----
-
-## 🧪 Running the Pytest Suite
-We provide a 100% mocked layered testing suite verifying the Controller, Service, and Repository layers independently.
-
-```powershell
-# Run the complete test suite:
-pytest app/test/ -v
-```
-
----
-
-## 🐳 Running with Docker (Recommended for Evaluators)
-
-We provide optimized configurations to run the entire system inside Docker containers instantly, without needing local Python or PostgreSQL installations.
-
-### 1. Development Mode (Includes PostgreSQL Database Container)
-This builds the application and spins up a dedicated PostgreSQL database container connected automatically. It also mounts a code volume for live reloading.
-
+### 1. Clone the Repository
+Clone the codebase to your local machine using git:
 ```bash
-# Start the development containers:
+git clone https://github.com/anil-kumar981/employee-management-system.git
+cd employee-management-system
+```
+
+### 2. Create & Activate Virtual Environment
+Set up a clean virtual environment to isolate project dependencies:
+
+* **On Windows (Command Prompt):**
+  ```cmd
+  python -m venv venv
+  venv\Scripts\activate
+  ```
+* **On Windows (PowerShell):**
+  ```powershell
+  python -m venv venv
+  .\venv\Scripts\activate
+  ```
+* **On macOS / Linux / Git Bash:**
+  ```bash
+  python3 -m venv venv
+  source venv/Scripts/activate
+  ```
+
+### 3. Install Dependencies
+Install all required libraries, engines, and ORM components:
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Database Setup & Configurations
+1. Ensure a PostgreSQL database server is running locally on port `5432`.
+2. Create an empty database named `Employee_management_System`.
+3. Create a `.env` file in the root folder (or update the existing one) with your credentials:
+   ```env
+   FLASK_ENV=development
+   PORT=5000
+   DATABASE_URL=postgresql+asyncpg://<username>:<password>@localhost:5432/Employee_management_System
+   ```
+
+### 5. Running Alembic DB Migrations
+The database schema is fully managed via Alembic. Run these commands to apply or create migrations:
+
+* **Apply existing migrations to the database:**
+  ```bash
+  alembic upgrade head
+  ```
+* **Create a new migration after updating models:**
+  ```bash
+  alembic revision --autogenerate -m "migration_description"
+  ```
+> [!NOTE]
+> The application will also automatically check and apply any pending migrations silently during server startup!
+
+---
+
+## 🏃 Running the Application
+
+You can execute this project in two distinct modes depending on your target performance needs:
+
+### Option A: Standard Web Server (`python main.py`)
+* **Command:** 
+  ```bash
+  python main.py
+  ```
+* **Purpose:** Runs the standard Flask development server in WSGI mode.
+* **How it works:** Handles incoming requests in synchronous thread pools. Ideal for simple local debugging, quick route testing, and standard development.
+
+### Option B: High-Performance Async Server (`python asgi.py`)
+* **Command:** 
+  ```bash
+  python asgi.py
+  ```
+* **Purpose:** Runs a fully-adapted ASGI application served via `uvicorn`.
+* **How it works:** Wraps Flask inside `WsgiToAsgi` from the `asgiref` package, allowing it to hook into an event loop. This enables natively non-blocking async network sockets and leverages uvicorn's event loop to achieve high connection scaling.
+
+---
+
+## 🐳 Running with Docker
+
+### 1. Development Mode (Includes DB Container)
+Builds the app container, spins up an isolated PostgreSQL container, and links them automatically:
+```bash
 docker compose -f docker-compose.dev.yml up --build
 ```
-* Once started, the API will be available at **`http://localhost:5000`** and Swagger specs at **`http://localhost:5000/swagger-ui`**.
+* **URL:** `http://localhost:5000`
+* **Interactive API Docs:** `http://localhost:5000/swagger-ui`
 
-### 2. Production Mode (Connects to External Database)
-For production deployments, the application container starts standalone and connects to a production PostgreSQL instance provided via environmental configurations.
-
+### 2. Production Mode (Standalone App)
+Runs the standalone optimized application container, pointing to the external database host set in `.env`:
 ```bash
-# Set your production database URL on your host system:
-export DATABASE_URL="postgresql+asyncpg://<username>:<password>@<host>:5432/<db_name>"
-
-# Run the production container:
 docker compose -f docker-compose.prod.yml up --build
 ```
 
+---
+
+## 📑 API Endpoints & Contract Formats
+
+All API endpoints return standard, clean JSON payloads.
+
+| Method | Path | Description | Request Format | Response Format (Success 200/201) |
+| :--- | :--- | :--- | :--- | :--- |
+| **POST** | `/employees/` | Add a new employee record | `{ "name": "John Doe", "email": "john@example.com", "department": "HR", "date_joined": "2026-06-01" }` | `{ "success": true, "message": "Employee...created.", "data": { "id": 1, "name": "John Doe", ... } }` |
+| **GET** | `/employees/` | Fetch list of all employees | *None* | `{ "success": true, "message": "Successfully retrieved 1 record.", "data": [...] }` |
+| **GET** | `/employees/{id}` | Get details of a single employee | *None* | `{ "success": true, "message": "...", "data": { "id": 1, "name": "John Doe", ... } }` |
+| **PUT** | `/employees/{id}` | Modify details of an employee | `{ "department": "Engineering" }` *(Partial update supported)* | `{ "success": true, "message": "...", "data": { "id": 1, "department": "Engineering", ... } }` |
+| **DELETE**| `/employees/{id}` | Remove employee from the database | *None* | `{ "success": true, "message": "Employee with ID 1 was deleted.", "data": null }` |
+
+---
+
+## 🧪 Running Unit Tests
+We provide a comprehensive layered testing suite using mock objects for database interfaces:
+```bash
+pytest app/test/ -v
+```
