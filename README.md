@@ -18,7 +18,7 @@ This project incorporates clean coding practices, **Dependency Injection (DI)**,
 * All database queries are natively asynchronous utilizing **`asyncpg`** (the fastest async PostgreSQL driver for Python) and SQLAlchemy's **`AsyncSession`**.
 * Eliminates thread-blocking constraints, unlocking high-concurrency scaling.
 
-### 3. FastAPI-Style Validation & Global Error Handling
+### 3. Pydantic-based Request Validation & Global Error Handling
 * Incoming JSON payloads are validated at the route boundary using a custom `@validate_request` decorator and Pydantic schemas.
 * Global exceptions are caught by centralized middleware, mapping database conflicts, entity absences, or validation failures into clean API responses.
 
