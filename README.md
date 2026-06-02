@@ -161,6 +161,9 @@ You can execute this project in two distinct modes depending on your target perf
 * **Purpose:** Runs a fully-adapted ASGI application served via `uvicorn`.
 * **How it works:** Wraps Flask inside `WsgiToAsgi` from the `asgiref` package, allowing it to hook into an event loop. This enables natively non-blocking async network sockets and leverages uvicorn's event loop to achieve high connection scaling.
 
+* **URL:** `http://localhost:5000`
+* **Interactive API Docs:** `http://localhost:5000/swagger-ui`
+
 ---
 
 ## 🐳 Running with Docker
