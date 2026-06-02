@@ -83,10 +83,11 @@ cd employee-management-system
 ### 2. Create & Activate Virtual Environment
 Set up a clean virtual environment to isolate project dependencies:
 
-* **On Windows (Command Prompt):**
+* **On Windows (Command Prompt, gitbash):**
   ```cmd
   python -m venv venv
-  venv\Scripts\activate
+  - command prompt: venv\Scripts\activate
+  - gitbash: source venv/Scripts/activate
   ```
 * **On Windows (PowerShell):**
   ```powershell
