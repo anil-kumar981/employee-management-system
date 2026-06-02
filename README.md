@@ -121,3 +121,30 @@ We provide a 100% mocked layered testing suite verifying the Controller, Service
 # Run the complete test suite:
 pytest app/test/ -v
 ```
+
+---
+
+## 🐳 Running with Docker (Recommended for Evaluators)
+
+We provide optimized configurations to run the entire system inside Docker containers instantly, without needing local Python or PostgreSQL installations.
+
+### 1. Development Mode (Includes PostgreSQL Database Container)
+This builds the application and spins up a dedicated PostgreSQL database container connected automatically. It also mounts a code volume for live reloading.
+
+```bash
+# Start the development containers:
+docker compose -f docker-compose.dev.yml up --build
+```
+* Once started, the API will be available at **`http://localhost:5000`** and Swagger specs at **`http://localhost:5000/swagger-ui`**.
+
+### 2. Production Mode (Connects to External Database)
+For production deployments, the application container starts standalone and connects to a production PostgreSQL instance provided via environmental configurations.
+
+```bash
+# Set your production database URL on your host system:
+export DATABASE_URL="postgresql+asyncpg://<username>:<password>@<host>:5432/<db_name>"
+
+# Run the production container:
+docker compose -f docker-compose.prod.yml up --build
+```
+

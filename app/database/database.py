@@ -5,6 +5,7 @@ from app.core.config import Config
 from contextlib import asynccontextmanager
 import sys
 from sqlalchemy import select
+from sqlalchemy.pool import NullPool
 
 
 class Base(DeclarativeBase):
@@ -14,7 +15,11 @@ class Base(DeclarativeBase):
 
 
 # Create a modern asynchronous PostgreSQL database engine
-async_engine = create_async_engine(Config.DATABASE_URL, echo=False, future=True)
+# We use NullPool here because Flask runs in a thread-per-request environment.
+# This prevents connections in the pool from getting bound to closed request-scoped event loops.
+async_engine = create_async_engine(
+    Config.DATABASE_URL, echo=False, future=True, poolclass=NullPool
+)
 
 
 # Async session factory for spawning AsyncSession instances
@@ -45,14 +50,10 @@ def init_db(app=None) -> None:
         return
 
     async def _init_database():
-        if Config.DEBUG:
-            # Under local development, auto-create tables via SQLAlchemy for easy evaluator setup
-            async with async_engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
-        else:
-            # In production, bypass schema alteration and run a fast connectivity health check (SELECT 1)
-            async with async_engine.connect() as conn:
-                await conn.execute(select(1))
+        # Schema is fully managed by Alembic migrations (run_migrations in create_app).
+        # This only verifies DB connectivity with a lightweight SELECT 1 health check.
+        async with async_engine.connect() as conn:
+            await conn.execute(select(1))
 
     try:
         try:
