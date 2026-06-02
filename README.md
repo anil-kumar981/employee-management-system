@@ -126,6 +126,16 @@ The database schema is fully managed via Alembic. Run these commands to apply or
   ```bash
   alembic revision --autogenerate -m "migration_description"
   ```
+* **How to revert/remove a wrong migration:**
+  * **Case 1: If migration is NOT yet applied to the database:**
+    Simply delete the generated python script file from the `migrations/versions/` directory.
+  * **Case 2: If migration is ALREADY applied to the database:**
+    1. Downgrade the database schema by one step:
+       ```bash
+       alembic downgrade -1
+       ```
+    2. Delete the incorrect migration python script file from the `migrations/versions/` directory.
+
 > [!NOTE]
 > The application will also automatically check and apply any pending migrations silently during server startup!
 
