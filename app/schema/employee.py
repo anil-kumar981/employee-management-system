@@ -157,3 +157,21 @@ class EmployeeListResponseWrapperSchema(ApiResponseSchema):
     """Wrapped success response containing an array of employee records."""
 
     data: list[EmployeeResponseSchema]
+
+
+class PaginatedMetaSchema(BaseModel):
+    """Schema representing pagination metadata."""
+
+    page: int = Field(..., description="The current page number")
+    limit: int = Field(..., description="The number of results per page")
+    total_results: int = Field(..., description="The total number of results matching the query")
+    total_pages: int = Field(..., description="The total number of pages")
+    has_next: bool = Field(..., description="True if there is a next page")
+    has_prev: bool = Field(..., description="True if there is a previous page")
+
+
+class EmployeePaginatedListResponseWrapperSchema(ApiResponseSchema):
+    """Wrapped success response containing an array of employee records and pagination metadata."""
+
+    data: list[EmployeeResponseSchema]
+    paginatedMeta: PaginatedMetaSchema

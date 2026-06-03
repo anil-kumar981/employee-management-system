@@ -5,6 +5,8 @@ from app.schema.employee import (
     EmployeeResponseSchema,
     EmployeeResponseWrapperSchema,
     EmployeeListResponseWrapperSchema,
+    EmployeePaginatedListResponseWrapperSchema,
+    PaginatedMetaSchema,
     ApiResponseSchema
 )
 
@@ -57,14 +59,64 @@ def get_openapi_json():
             "/employees/": {
                 "get": {
                     "summary": "Retrieve list of all employees",
-                    "description": "Fetches all registered employee records. Returns a custom-wrapped JSON array.",
+                    "description": "Fetches all registered employee records with optional filtering, sorting, and pagination.",
+                    "parameters": [
+                        {
+                            "name": "page",
+                            "in": "query",
+                            "schema": {"type": "integer", "default": 1},
+                            "description": "The page number to retrieve (defaults to 1)."
+                        },
+                        {
+                            "name": "limit",
+                            "in": "query",
+                            "schema": {"type": "integer", "default": 10},
+                            "description": "The number of records per page (defaults to 10)."
+                        },
+                        {
+                            "name": "sort",
+                            "in": "query",
+                            "schema": {"type": "string"},
+                            "description": "Comma-separated sorting fields (e.g. 'name:asc,email:desc' or '-date_joined')."
+                        },
+                        {
+                            "name": "search",
+                            "in": "query",
+                            "schema": {"type": "string"},
+                            "description": "Global search term matched against name, email, department/designation, and date joined."
+                        },
+                        {
+                            "name": "name",
+                            "in": "query",
+                            "schema": {"type": "string"},
+                            "description": "Filter by employee name (partial match)."
+                        },
+                        {
+                            "name": "email",
+                            "in": "query",
+                            "schema": {"type": "string"},
+                            "description": "Filter by employee email (partial match)."
+                        },
+                        {
+                            "name": "designation",
+                            "in": "query",
+                            "schema": {"type": "string"},
+                            "description": "Filter by employee department/designation (partial match)."
+                        },
+                        {
+                            "name": "join_date",
+                            "in": "query",
+                            "schema": {"type": "string", "format": "date"},
+                            "description": "Filter by exact join date (YYYY-MM-DD)."
+                        }
+                    ],
                     "responses": {
                         "200": {
                             "description": "Successful retrieval of employee records list.",
                             "content": {
                                 "application/json": {
                                     "schema": {
-                                        "$ref": "#/components/schemas/EmployeeListResponseWrapper"
+                                        "$ref": "#/components/schemas/EmployeePaginatedListResponseWrapper"
                                     }
                                 }
                             }
@@ -196,6 +248,8 @@ def get_openapi_json():
                 "EmployeeResponse": EmployeeResponseSchema.model_json_schema(),
                 "EmployeeResponseWrapper": EmployeeResponseWrapperSchema.model_json_schema(),
                 "EmployeeListResponseWrapper": EmployeeListResponseWrapperSchema.model_json_schema(),
+                "PaginatedMeta": PaginatedMetaSchema.model_json_schema(),
+                "EmployeePaginatedListResponseWrapper": EmployeePaginatedListResponseWrapperSchema.model_json_schema(),
                 "ApiResponse": ApiResponseSchema.model_json_schema()
             }
         }

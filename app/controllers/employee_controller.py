@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, request
 from app.dependencies.employee_dependencies import get_employee_service
 from app.schema.employee import EmployeeCreateSchema, EmployeeUpdateSchema
 from app.decorators.decorator import validate_request
@@ -12,9 +12,19 @@ employee_bp = Blueprint("employees", __name__, url_prefix="/employees")
 async def get_all_employees():
     """Retrieve list of all employees."""
     service = get_employee_service()
-    employees = await service.get_all_employees()
-    message = f"Successfully retrieved {len(employees)} employee record{'s' if len(employees) != 1 else ''}."
-    return ApiResponseFactory.success(employees, message)
+    params = request.args.to_dict()
+    result = await service.get_all_employees(params)
+
+    if isinstance(result, tuple):
+        employees, paginated_meta = result
+        total_count = paginated_meta["total_results"]
+    else:
+        employees = result
+        paginated_meta = None
+        total_count = len(employees)
+
+    message = f"Successfully retrieved {total_count} employee record{'s' if total_count != 1 else ''}."
+    return ApiResponseFactory.success(employees, message, paginated_meta=paginated_meta)
 
 
 @employee_bp.route("/", methods=["POST"])

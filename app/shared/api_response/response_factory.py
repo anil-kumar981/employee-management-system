@@ -8,7 +8,8 @@ class ApiResponseFactory:
     def success(
         data: Optional[Any] = None, 
         message: str = "Operation completed successfully.", 
-        status_code: int = 200
+        status_code: int = 200,
+        paginated_meta: Optional[Dict[str, Any]] = None
     ) -> Tuple[Any, int]:
         """Generate a success response."""
         response_body: Dict[str, Any] = {
@@ -17,6 +18,8 @@ class ApiResponseFactory:
         }
         if data is not None:
             response_body["data"] = data
+        if paginated_meta is not None:
+            response_body["paginatedMeta"] = paginated_meta
             
         return jsonify(response_body), status_code
 

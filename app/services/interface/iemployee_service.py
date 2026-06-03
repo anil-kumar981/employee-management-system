@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Union, Tuple
 from app.schema.employee import EmployeeCreateSchema, EmployeeUpdateSchema
 
 class IEmployeeService(ABC):
@@ -16,8 +16,8 @@ class IEmployeeService(ABC):
         pass
         
     @abstractmethod
-    async def get_all_employees(self) -> List[Dict[str, Any]]:
-        """Retrieve all employees' details."""
+    async def get_all_employees(self, params: Optional[Dict[str, Any]] = None) -> Union[List[Dict[str, Any]], Tuple[List[Dict[str, Any]], Dict[str, Any]]]:
+        """Retrieve all employees' details, optionally applying pagination, sorting, and searching."""
         pass
         
     @abstractmethod
