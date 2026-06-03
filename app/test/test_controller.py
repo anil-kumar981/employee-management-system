@@ -45,6 +45,47 @@ def test_get_all_employees_success(client):
         assert len(body["data"]) == 1
         assert body["data"][0]["name"] == "Bob Tester"
 
+def test_get_all_employees_paginated(client):
+    """Test retrieving employee collection with pagination query parameters."""
+    with patch(
+        "app.controllers.employee_controller.get_employee_service"
+    ) as mock_get_service:
+        mock_service = AsyncMock()
+        mock_get_service.return_value = mock_service
+
+        mock_service.get_all_employees.return_value = (
+            [
+                {
+                    "id": 1,
+                    "name": "Bob Tester",
+                    "email": "bob@test.com",
+                    "department": "QA",
+                    "date_joined": "2026-06-01",
+                }
+            ],
+            {
+                "page": 1,
+                "limit": 10,
+                "total_results": 1,
+                "total_pages": 1,
+                "has_next": False,
+                "has_prev": False,
+            }
+        )
+
+        response = client.get("/employees/?page=1&limit=10&search=Bob")
+        assert response.status_code == 200
+
+        body = response.get_json()
+        assert body["success"] is True
+        assert "Successfully retrieved 1 employee record" in body["message"]
+        assert len(body["data"]) == 1
+        assert body["data"][0]["name"] == "Bob Tester"
+        assert "paginatedMeta" in body
+        assert body["paginatedMeta"]["page"] == 1
+        assert body["paginatedMeta"]["limit"] == 10
+        assert body["paginatedMeta"]["total_results"] == 1
+
 
 def test_create_employee_success(client):
     """Test creating an employee yields 201 status and dynamic confirmation message."""

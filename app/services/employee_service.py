@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Union, Tuple
 from app.model.employee import Employee
 from app.services.interface.iemployee_service import IEmployeeService
 from app.shared.exceptions import ConflictException, EntityNotFoundException
@@ -43,10 +43,13 @@ class EmployeeServiceImpl(IEmployeeService):
             )
         return employee.to_dict()
 
-    async def get_all_employees(self) -> List[Dict[str, Any]]:
-        """Retrieve all employees."""
-        employees = await self.repo.get_all()
-        return [emp.to_dict() for emp in employees]
+    async def get_all_employees(self, params: Optional[Dict[str, Any]] = None) -> Union[List[Dict[str, Any]], Tuple[List[Dict[str, Any]], Dict[str, Any]]]:
+        """Retrieve all employees, optionally applying pagination, sorting, and searching."""
+        result = await self.repo.get_all(params)
+        if isinstance(result, tuple):
+            employees, pagination_meta = result
+            return [emp.to_dict() for emp in employees], pagination_meta
+        return [emp.to_dict() for emp in result]
 
     async def update_employee(
         self, employee_id: int, employee_in: EmployeeUpdateSchema

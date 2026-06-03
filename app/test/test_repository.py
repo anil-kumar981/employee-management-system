@@ -80,6 +80,27 @@ def test_get_all(repo, mock_session, mock_employee):
     mock_session.execute.assert_called_once()
     assert result == [mock_employee]
 
+def test_get_all_paginated(repo, mock_session, mock_employee):
+    """Test retrieving paginated, filtered records."""
+    mock_count_result = MagicMock()
+    mock_count_result.scalar_one.return_value = 1
+    
+    mock_items_result = MagicMock()
+    mock_items_result.scalars.return_value.all.return_value = [mock_employee]
+    
+    mock_session.execute = AsyncMock(side_effect=[mock_count_result, mock_items_result])
+    
+    params = {"page": "1", "limit": "5", "search": "Alice"}
+    items, meta = asyncio.run(repo.get_all(params))
+    
+    assert items == [mock_employee]
+    assert meta["page"] == 1
+    assert meta["limit"] == 5
+    assert meta["total_results"] == 1
+    assert meta["total_pages"] == 1
+    assert meta["has_next"] is False
+    assert meta["has_prev"] is False
+
 def test_update_employee(repo, mock_session, mock_employee):
     """Test updating merges changes and commits to session."""
     mock_session.merge.return_value = mock_employee
